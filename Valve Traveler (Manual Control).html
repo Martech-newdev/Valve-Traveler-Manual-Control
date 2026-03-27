@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valve Traveler (Manual Control)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap');
+
+  :root {
+    --dark: #1a1a1a;
+    --mid: #3a3a3a;
+    --border: #444;
+    --header-bg: #2c2c2c;
+    --accent: #c0392b;
+    --bg: #f4f4f2;
+    --input-border: #999;
+    --row-alt: #f9f9f7;
+    --row-hover: #fff3f2;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: #d0d0ce;
+    color: var(--dark);
+    font-size: 12px;
+    padding: 20px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 9px 26px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn-primary   { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--header-bg); color: #fff; }
+  .btn-save      { background: #27ae60; color: #fff; }
+  .btn-load      { background: #2980b9; color: #fff; }
+
+  .save-status {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 0.3px;
+    min-width: 160px;
+    text-align: center;
+  }
+  .save-status.saved  { color: #27ae60; }
+  .save-status.unsaved { color: #c0392b; }
+
+  /* ── FORM CARD ── */
+  .form-card {
+    background: var(--bg);
+    max-width: 960px;
+    margin: 0 auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.28);
+    border: 1px solid #bbb;
+  }
+
+  /* ── LOGO / TITLE HEADER ── */
+  .title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  .logo-wrap { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 42px; height: 42px;
+    background: var(--accent);
+    clip-path: polygon(0 0,70% 0,100% 50%,70% 100%,0 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-text-block { line-height: 1.15; }
+  .logo-main {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 700; color: var(--dark);
+  }
+  .logo-main span { color: var(--accent); }
+  .logo-sub { font-size: 9px; color: #666; letter-spacing: 0.5px; }
+  .form-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--dark);
+  }
+
+  /* ── META GRID ── */
+  .meta-section { padding: 10px 18px; border-bottom: 1.5px solid #ccc; }
+
+  .meta-top {
+    display: grid;
+    grid-template-columns: 220px 1fr 130px 80px;
+    gap: 0;
+    border: 1.5px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .meta-cell {
+    padding: 5px 8px;
+    border-right: 1px solid #ccc;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .meta-cell:last-child { border-right: none; }
+  .meta-cell.span2 { grid-column: span 2; }
+  .meta-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    color: var(--mid); white-space: nowrap;
+  }
+  .meta-cell input[type="text"] {
+    border: none; border-bottom: 1px solid var(--input-border);
+    background: transparent; flex: 1; min-width: 0;
+    font-family: 'Barlow', sans-serif; font-size: 12px;
+    padding: 1px 3px; outline: none; color: var(--dark);
+  }
+  .meta-cell input[type="text"]:focus { border-bottom-color: var(--accent); background: #fff8f8; }
+
+  .meta-row-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1.5px solid var(--border);
+    border-top: none;
+    margin-bottom: 0;
+  }
+  .meta-row-grid .meta-cell { border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; }
+  .meta-row-grid .meta-cell:last-child { border-right: none; }
+  .meta-row-grid .meta-cell.last-row { border-bottom: none; }
+
+  .special-row {
+    border: 1.5px solid var(--border);
+    border-top: none;
+    padding: 5px 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .special-row input[type="text"] {
+    flex: 1; border: none; border-bottom: 1px solid var(--input-border);
+    background: transparent; font-size: 12px; padding: 1px 3px; outline: none;
+  }
+  .special-row input[type="text"]:focus { border-bottom-color: var(--accent); }
+
+  /* ── COMPONENT TABLE ── */
+  .table-section { padding: 0 18px 10px; }
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1.5px solid var(--border);
+    margin-top: 10px;
+  }
+  .comp-table thead tr th {
+    background: var(--header-bg);
+    color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 5px 6px;
+    border-right: 1px solid #555;
+    text-align: center;
+  }
+  .comp-table thead tr th:last-child { border-right: none; }
+  .sub-header th {
+    background: #444 !important;
+    font-size: 9px !important;
+    padding: 3px 4px !important;
+  }
+  .comp-table tbody tr { border-bottom: 1px solid #ddd; }
+  .comp-table tbody tr:nth-child(even) { background: var(--row-alt); }
+  .comp-table tbody tr:hover { background: var(--row-hover); }
+  .comp-table td {
+    padding: 4px 6px;
+    border-right: 1px solid #e0e0e0;
+    vertical-align: middle;
+  }
+  .comp-table td:last-child { border-right: none; }
+
+  .td-na { text-align: center; width: 28px; }
+  .td-component { font-weight: 600; font-size: 11px; white-space: nowrap; }
+  .td-text input[type="text"] {
+    width: 100%; border: none; border-bottom: 1px solid #ccc;
+    background: transparent; font-size: 11px; padding: 1px 3px; outline: none;
+  }
+  .td-text input[type="text"]:focus { border-bottom-color: var(--accent); background: #fff8f8; }
+  .td-cb { text-align: center; width: 52px; }
+  .td-notes input[type="text"] {
+    width: 100%; border: none; border-bottom: 1px solid #ccc;
+    background: transparent; font-size: 11px; padding: 1px 3px; outline: none;
+  }
+  .td-notes input[type="text"]:focus { border-bottom-color: var(--accent); background: #fff8f8; }
+
+  input[type="checkbox"] {
+    width: 13px; height: 13px;
+    accent-color: var(--accent); cursor: pointer;
+  }
+
+  /* N/A row dimming */
+  tr.na-row td:not(.td-na) { opacity: 0.35; pointer-events: none; }
+
+  /* ── PACKING / GASKET / COMMENTS ── */
+  .lower-section { padding: 10px 18px; border-top: 1.5px solid #ccc; }
+
+  .pack-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px;
+  }
+  .pack-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; white-space: nowrap; min-width: 60px;
+  }
+  .pack-row input[type="text"] {
+    border: none; border-bottom: 1.5px solid var(--input-border);
+    background: transparent; font-size: 12px; padding: 2px 4px; outline: none;
+  }
+  .pack-row input[type="text"]:focus { border-bottom-color: var(--accent); }
+  .pack-row .size-input { width: 100px; }
+  .pack-row .qty-input  { width: 60px; }
+  .pack-row .notes-input { flex: 1; }
+  .pack-row .gasket-input { width: 200px; }
+
+  .comments-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+  .comments-area textarea {
+    width: 100%; height: 72px;
+    border: 1.5px solid var(--input-border);
+    border-radius: 2px; padding: 6px 8px;
+    font-family: 'Barlow', sans-serif; font-size: 12px;
+    background: #fff; resize: vertical; outline: none;
+  }
+  .comments-area textarea:focus { border-color: var(--accent); }
+
+  /* ── TEST DATA ── */
+  .test-section {
+    padding: 10px 18px 14px;
+    border-top: 2px solid var(--border);
+  }
+  .test-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    text-align: center; margin-bottom: 8px;
+    color: var(--dark);
+  }
+  .test-table {
+    width: 100%; border-collapse: collapse;
+    border: 1.5px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .test-table th {
+    background: var(--header-bg); color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 5px 8px; border-right: 1px solid #555;
+    text-align: left;
+  }
+  .test-table th:last-child { border-right: none; }
+  .test-table td {
+    padding: 5px 8px; border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+  }
+  .test-table td:last-child { border-right: none; }
+  .test-table input[type="text"] {
+    width: 100%; border: none; border-bottom: 1px solid #ccc;
+    background: transparent; font-size: 11px; padding: 1px 3px; outline: none;
+  }
+  .test-table input[type="text"]:focus { border-bottom-color: var(--accent); background: #fff8f8; }
+
+  .witness-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 20px; margin-top: 8px;
+  }
+  .witness-item { display: flex; align-items: center; gap: 8px; }
+  .witness-item label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .witness-item input[type="text"] {
+    flex: 1; border: none; border-bottom: 1.5px solid var(--input-border);
+    background: transparent; font-size: 12px; padding: 2px 4px; outline: none;
+  }
+  .witness-item input[type="text"]:focus { border-bottom-color: var(--accent); }
+  .date-input { width: 110px !important; flex: none !important; }
+
+  /* ── FOOTER ── */
+  .form-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 18px;
+    background: #e8e8e6; border-top: 1.5px solid #ccc;
+    font-size: 9px; color: #777;
+  }
+
+  /* ── LOAD MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 4px;
+    padding: 22px 26px; width: 420px; max-width: 95vw;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+  }
+  .modal-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 700; text-transform: uppercase;
+    margin-bottom: 14px; color: var(--dark);
+  }
+  .modal-box textarea {
+    width: 100%; height: 160px; font-size: 11px;
+    font-family: monospace; border: 1.5px solid #ccc;
+    border-radius: 2px; padding: 6px; resize: vertical; outline: none;
+  }
+  .modal-box textarea:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; }
+  .modal-hint { font-size: 10px; color: #888; margin-bottom: 8px; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .controls { display: none; }
+    .modal-overlay { display: none !important; }
+    .form-card { box-shadow: none; border: none; max-width: 100%; }
+    tr.na-row td:not(.td-na) { opacity: 0.35; }
+  }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button class="btn btn-save"    onclick="saveToFile()">&#8595; Export JSON</button>
+  <button class="btn btn-load"    onclick="openLoadModal()">&#8593; Import JSON</button>
+  <button class="btn btn-primary" onclick="window.print()">&#128424; Print / Save as PDF</button>
+  <button class="btn btn-secondary" onclick="clearAll()">&#8635; Clear Form</button>
+  <span class="save-status" id="saveStatus">Auto-save: not yet saved</span>
+</div>
+
+<div class="form-card">
+
+  <!-- TITLE BAR -->
+  <div class="title-bar">
+    <div class="logo-wrap">
+      <div class="logo-icon"></div>
+      <div class="logo-text-block">
+        <div class="logo-main"><span>Mar</span>Tech</div>
+        <div class="logo-sub">Mechanical Analysis and Repair</div>
+      </div>
+    </div>
+    <div class="form-title">Valve Traveler (Manual Control)</div>
+  </div>
+
+  <!-- META INFO -->
+  <div class="meta-section">
+
+    <!-- Row 1: Company | Customer | Job# -->
+    <div class="meta-top">
+      <div class="meta-cell" style="flex-direction:column;align-items:flex-start;gap:2px;border-right:1px solid #ccc;">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;">Mechanical Analysis/Repair Inc.</span>
+        <span style="font-size:10px;font-style:italic;color:#555;">Lodi, CA</span>
+      </div>
+      <div class="meta-cell span2">
+        <span class="meta-label">Customer:</span>
+        <input type="text" id="customer">
+      </div>
+      <div class="meta-cell">
+        <span class="meta-label">Job #:</span>
+        <input type="text" id="job_num" style="width:70px;">
+      </div>
+    </div>
+
+    <!-- Row 2: Date Received | Item / Of -->
+    <div style="display:grid;grid-template-columns:220px 1fr 100px 80px;border:1.5px solid var(--border);border-top:none;margin-bottom:0;">
+      <div class="meta-cell" style="border-right:1px solid #ccc;"></div>
+      <div class="meta-cell span2" style="border-right:1px solid #ccc;">
+        <span class="meta-label">Date Received:</span>
+        <input type="text" id="date_received" placeholder="MM/DD/YYYY">
+      </div>
+      <div class="meta-cell" style="border-right:1px solid #ccc;">
+        <span class="meta-label">Item:</span>
+        <input type="text" id="item" style="width:36px;">
+      </div>
+      <div class="meta-cell">
+        <span class="meta-label">Of:</span>
+        <input type="text" id="item_of" style="width:36px;">
+      </div>
+    </div>
+
+    <!-- Row 3-5: QTY / SIZE / TYPE / ENDS / MFG / FIG# / SER# / BODY MAT / CUSTOMER SPEC etc -->
+    <div style="border:1.5px solid var(--border);border-top:none;">
+      <!-- Row: QTY | MFG | CUSTOMER SPEC -->
+      <div style="display:grid;grid-template-columns:120px 180px 1fr;border-bottom:1px solid #ccc;">
+        <div class="meta-cell" style="border-right:1px solid #ccc;">
+          <span class="meta-label">QTY:</span><input type="text" id="qty" style="width:60px;">
+        </div>
+        <div class="meta-cell" style="border-right:1px solid #ccc;">
+          <span class="meta-label">MFG:</span><input type="text" id="mfg">
+        </div>
+        <div class="meta-cell">
+          <span class="meta-label">Customer Spec.:</span><input type="text" id="cust_spec">
+        </div>
+      </div>
+      <!-- Row: SIZE | FIG# | CUSTOMER SPEC # -->
+      <div style="display:grid;grid-template-columns:120px 180px 1fr;border-bottom:1px solid #ccc;">
+        <div class="meta-cell" style="border-right:1px solid #ccc;">
+          <span class="meta-label">Size:</span><input type="text" id="size" style="width:60px;">
+        </div>
+        <div class="meta-cell" style="border-right:1px solid #ccc;">
+          <span class="meta-label">Fig #:</span><input type="text" id="fig_num">
+        </div>
+        <div class="meta-cell">
+          <span class="meta-label">Customer Spec. #:</span><input type="text" id="cust_spec_num">
+        </div>
+      </div>
+      <!-- Row: TYPE | SER# | CUSTOMER P.O. # -->
+      <div style="display:grid;grid-template-columns:120px 180px 1fr;border-bottom:1px solid #ccc;">
+        <div class="meta-cell" style="border-right:1px solid #ccc;">
+          <span class="meta-label">Type:</span><input type="text" id="type" style="width:60px;">
+        </div>
+        <div class="meta-cell" style="border-right:1px solid #ccc;">
+          <span class="meta-label">Ser #:</span><input type="text" id="ser_num">
+        </div>
+        <div class="meta-cell">
+          <span class="meta-label">Customer P.O. #:</span><input type="text" id="cust_po">
+        </div>
+      </div>
+      <!-- Row: ENDS | BODY MAT | REPAIR TYPE -->
+      <div style="display:grid;grid-template-columns:120px 180px 1fr;">
+        <div class="meta-cell" style="border-right:1px solid #ccc;">
+          <span class="meta-label">Ends:</span><input type="text" id="ends" style="width:60px;">
+        </div>
+        <div class="meta-cell" style="border-right:1px solid #ccc;">
+          <span class="meta-label">Body Mat:</span><input type="text" id="body_mat">
+        </div>
+        <div class="meta-cell">
+          <span class="meta-label">Repair Type:</span><input type="text" id="repair_type">
+        </div>
+      </div>
+    </div>
+
+    <!-- SPECIAL INSTRUCTIONS -->
+    <div class="special-row">
+      <span class="meta-label" style="white-space:nowrap;">Special Instructions:</span>
+      <input type="text" id="special_instr">
+    </div>
+
+  </div><!-- /meta-section -->
+
+  <!-- COMPONENT TABLE -->
+  <div class="table-section">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th style="width:28px;">N/A</th>
+          <th style="text-align:left;width:150px;">Component</th>
+          <th style="text-align:left;">As Found</th>
+          <th style="width:90px;">Recommendation</th>
+          <th colspan="4" style="width:180px;">Work Performed</th>
+          <th style="text-align:left;">Notes</th>
+        </tr>
+        <tr class="sub-header">
+          <th></th><th></th><th></th><th></th>
+          <th style="width:45px;">Welded</th>
+          <th style="width:45px;">Machined</th>
+          <th style="width:45px;">Replaced</th>
+          <th style="width:45px;">Cleaned</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="compTableBody">
+        <!-- rows injected by JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PACKING / GASKET / COMMENTS -->
+  <div class="lower-section">
+    <div class="pack-row">
+      <span class="pack-label">Packing</span>
+      <span class="meta-label" style="margin-left:4px;">Size:</span>
+      <input type="text" class="size-input" id="packing_size">
+      <span class="meta-label">QTY:</span>
+      <input type="text" class="qty-input" id="packing_qty">
+      <span class="meta-label" style="margin-left:12px;">Notes:</span>
+      <input type="text" class="notes-input" id="packing_notes">
+    </div>
+    <div class="pack-row">
+      <span class="pack-label">Gasket</span>
+      <input type="text" class="gasket-input" id="gasket_val">
+      <span class="meta-label" style="margin-left:12px;">Notes:</span>
+      <input type="text" class="notes-input" id="gasket_notes">
+    </div>
+    <div style="margin-top:8px;">
+      <div class="comments-label">Comments</div>
+      <div class="comments-area">
+        <textarea id="comments_text" placeholder="Enter comments here..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEST DATA -->
+  <div class="test-section">
+    <div class="test-title">Test Data</div>
+    <table class="test-table">
+      <thead>
+        <tr>
+          <th>Applicable Standard</th>
+          <th>Pressure (P.S.I.G.)</th>
+          <th>Medium</th>
+          <th>Leakage Rate</th>
+          <th>Hold Time (Min.)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input type="text" id="std1"></td>
+          <td><input type="text" id="pres1"></td>
+          <td><input type="text" id="med1"></td>
+          <td><input type="text" id="leak1"></td>
+          <td><input type="text" id="hold1"></td>
+        </tr>
+        <tr>
+          <td><input type="text" id="std2"></td>
+          <td><input type="text" id="pres2"></td>
+          <td><input type="text" id="med2"></td>
+          <td><input type="text" id="leak2"></td>
+          <td><input type="text" id="hold2"></td>
+        </tr>
+        <tr>
+          <td><input type="text" id="std3"></td>
+          <td><input type="text" id="pres3"></td>
+          <td><input type="text" id="med3"></td>
+          <td><input type="text" id="leak3"></td>
+          <td><input type="text" id="hold3"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="witness-row">
+      <div>
+        <div class="witness-item">
+          <label>Witness By:</label>
+          <input type="text" id="witness_by">
+          <label style="margin-left:10px;">Date:</label>
+          <input type="text" id="witness_date" class="date-input" placeholder="MM/DD/YYYY">
+        </div>
+      </div>
+      <div>
+        <div class="witness-item">
+          <label>Test Performed By:</label>
+          <input type="text" id="test_by">
+          <label style="margin-left:10px;">Date:</label>
+          <input type="text" id="test_date" class="date-input" placeholder="MM/DD/YYYY">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-footer">
+    <span>MarTech &mdash; Mechanical Analysis and Repair &mdash; Lodi, CA</span>
+    <span>Valve Traveler (Manual Control)</span>
+  </div>
+
+</div><!-- /form-card -->
+
+<div class="controls" style="margin-top:18px;">
+  <button class="btn btn-save"    onclick="saveToFile()">&#8595; Export JSON</button>
+  <button class="btn btn-load"    onclick="openLoadModal()">&#8593; Import JSON</button>
+  <button class="btn btn-primary" onclick="window.print()">&#128424; Print / Save as PDF</button>
+  <button class="btn btn-secondary" onclick="clearAll()">&#8635; Clear Form</button>
+</div>
+
+<!-- LOAD MODAL -->
+<div class="modal-overlay" id="loadModal">
+  <div class="modal-box">
+    <div class="modal-title">Import Form Data (JSON)</div>
+    <div class="modal-hint">Paste the JSON you previously exported, then click Load.</div>
+    <textarea id="importJson" placeholder='{ "customer": "...", ... }'></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeLoadModal()">Cancel</button>
+      <button class="btn btn-load" onclick="loadFromText()">Load</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var components = [
+    'BODY','FLANGES','BONNET ASSEMBLY','PACKING BOX (ID)','STEM (OD)',
+    'BODY SEAT(S)','SEGMENT SKIRT','GATE SKIRT','GATE','SEGMENT',
+    'BEARINGS','STEM NUT','HANDWHEEL','STEM PROTECTOR','BONNET BOLTS',
+    'YOKE TUBE','YOKE TUBE BOLTS','PACKING INJECTOR','RUPTURE DISC','GREASE FITTINGS'
+  ];
+
+  var STORAGE_KEY = 'valveTraveler_manualControl';
+  var autoSaveTimer = null;
+
+  /* ── BUILD TABLE ── */
+  window.onload = function() {
+    buildTable();
+    loadFromStorage();
+    attachChangeListeners();
+  };
+
+  function buildTable() {
+    var tbody = document.getElementById('compTableBody');
+    for (var i = 0; i < components.length; i++) {
+      var r = document.createElement('tr');
+      var slug = 'c' + i;
+      r.innerHTML =
+        '<td class="td-na"><input type="checkbox" id="na_' + slug + '" onchange="toggleNaRow(this)"></td>' +
+        '<td class="td-component">' + components[i] + '</td>' +
+        '<td class="td-text"><input type="text" id="af_' + slug + '"></td>' +
+        '<td class="td-text"><input type="text" id="rec_' + slug + '"></td>' +
+        '<td class="td-cb"><input type="checkbox" id="weld_' + slug + '"></td>' +
+        '<td class="td-cb"><input type="checkbox" id="mach_' + slug + '"></td>' +
+        '<td class="td-cb"><input type="checkbox" id="repl_' + slug + '"></td>' +
+        '<td class="td-cb"><input type="checkbox" id="cln_' + slug + '"></td>' +
+        '<td class="td-notes"><input type="text" id="note_' + slug + '"></td>';
+      tbody.appendChild(r);
+    }
+  }
+
+  /* ── N/A ROW DIMMING ── */
+  function toggleNaRow(cb) {
+    var row = cb.closest('tr');
+    if (cb.checked) row.classList.add('na-row');
+    else            row.classList.remove('na-row');
+    scheduleAutoSave();
+  }
+
+  /* ── CHANGE LISTENERS ── */
+  function attachChangeListeners() {
+    document.querySelectorAll('input, textarea').forEach(function(el) {
+      el.addEventListener('input',  scheduleAutoSave);
+      el.addEventListener('change', scheduleAutoSave);
+    });
+  }
+
+  /* ── AUTO-SAVE (debounced 800 ms) ── */
+  function scheduleAutoSave() {
+    setStatus('unsaved', 'Unsaved changes...');
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(autoSave, 800);
+  }
+
+  function autoSave() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+      var now = new Date();
+      var t = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      setStatus('saved', 'Auto-saved at ' + t);
+    } catch(e) {
+      setStatus('unsaved', 'Auto-save failed');
+    }
+  }
+
+  function setStatus(cls, msg) {
+    var el = document.getElementById('saveStatus');
+    el.className = 'save-status ' + cls;
+    el.textContent = msg;
+  }
+
+  /* ── COLLECT ALL DATA ── */
+  function collectData() {
+    var data = {};
+    var textIds = [
+      'customer','job_num','date_received','item','item_of',
+      'qty','mfg','cust_spec','size','fig_num','cust_spec_num',
+      'type','ser_num','cust_po','ends','body_mat','repair_type','special_instr',
+      'packing_size','packing_qty','packing_notes','gasket_val','gasket_notes','comments_text',
+      'std1','pres1','med1','leak1','hold1',
+      'std2','pres2','med2','leak2','hold2',
+      'std3','pres3','med3','leak3','hold3',
+      'witness_by','witness_date','test_by','test_date'
+    ];
+    textIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) data[id] = el.tagName === 'TEXTAREA' ? el.value : el.value;
+    });
+    for (var i = 0; i < components.length; i++) {
+      var s = 'c' + i;
+      data['na_'   + s] = document.getElementById('na_'   + s).checked;
+      data['af_'   + s] = document.getElementById('af_'   + s).value;
+      data['rec_'  + s] = document.getElementById('rec_'  + s).value;
+      data['weld_' + s] = document.getElementById('weld_' + s).checked;
+      data['mach_' + s] = document.getElementById('mach_' + s).checked;
+      data['repl_' + s] = document.getElementById('repl_' + s).checked;
+      data['cln_'  + s] = document.getElementById('cln_'  + s).checked;
+      data['note_' + s] = document.getElementById('note_' + s).value;
+    }
+    return data;
+  }
+
+  /* ── APPLY DATA ── */
+  function applyData(data) {
+    Object.keys(data).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (el.type === 'checkbox') {
+        el.checked = !!data[id];
+        if (id.indexOf('na_') === 0 && el.checked) {
+          el.closest('tr').classList.add('na-row');
+        }
+      } else {
+        el.value = data[id] || '';
+      }
+    });
+  }
+
+  /* ── LOAD FROM LOCALSTORAGE ── */
+  function loadFromStorage() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      applyData(JSON.parse(raw));
+      setStatus('saved', 'Restored from auto-save');
+    } catch(e) {}
+  }
+
+  /* ── EXPORT JSON FILE ── */
+  function saveToFile() {
+    var json = JSON.stringify(collectData(), null, 2);
+    var blob = new Blob([json], {type: 'application/json'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    var job  = document.getElementById('job_num').value.trim();
+    a.href     = url;
+    a.download = 'ValveTraveler' + (job ? '_' + job : '') + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /* ── IMPORT MODAL ── */
+  function openLoadModal() {
+    document.getElementById('importJson').value = '';
+    document.getElementById('loadModal').classList.add('open');
+    setTimeout(function(){ document.getElementById('importJson').focus(); }, 50);
+  }
+  function closeLoadModal() {
+    document.getElementById('loadModal').classList.remove('open');
+  }
+  function loadFromText() {
+    var raw = document.getElementById('importJson').value.trim();
+    try {
+      var data = JSON.parse(raw);
+      clearAll(true);
+      applyData(data);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      setStatus('saved', 'Imported successfully');
+      closeLoadModal();
+    } catch(e) {
+      alert('Invalid JSON. Please paste the full exported file content.');
+    }
+  }
+
+  /* ── CLEAR FORM ── */
+  function clearAll(silent) {
+    document.querySelectorAll('input[type="text"], textarea').forEach(function(el){ el.value = ''; });
+    document.querySelectorAll('input[type="checkbox"]').forEach(function(el){ el.checked = false; });
+    document.querySelectorAll('tr.na-row').forEach(function(r){ r.classList.remove('na-row'); });
+    if (!silent) {
+      localStorage.removeItem(STORAGE_KEY);
+      setStatus('', 'Form cleared');
+    }
+  }
+
+  /* Close modal on overlay click */
+  document.getElementById('loadModal').addEventListener('click', function(e){
+    if (e.target === this) closeLoadModal();
+  });
+</script>
+</body>
+</html>
